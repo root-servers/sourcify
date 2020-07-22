@@ -47,6 +47,8 @@
   },
   "homepage": "https://github.com/ethereum/source-verify#readme",
   "dependencies": {
+    "@types/amqplib": "^0.5.13",
+    "amqplib": "^0.6.0",
     "bunyan": "^1.8.12",
     "cbor": "^4.3.0",
     "cors": "^2.8.5",
