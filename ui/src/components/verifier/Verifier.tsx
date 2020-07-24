@@ -1,4 +1,4 @@
-import React, {useReducer} from "react";
+import React, {useEffect, useReducer, useState} from "react";
 import {verifierReducer} from "../../reducers/verifierReducer";
 import {VerifierState} from "../../types";
 import {
@@ -10,7 +10,9 @@ import {FileUpload, AddressInput} from "./form";
 import Dropdown from "../Dropdown";
 import LoadingOverlay from "../LoadingOverlay";
 import {useDispatchContext} from "../../state/State";
-import {verify} from "../../api/verifier";
+import {checkddresses, verify} from "../../api/verifier";
+import Web3 from "web3-utils";
+import {getChainIds} from "../../utils";
 
 const initialState: VerifierState = {
     loading: false,
@@ -21,7 +23,71 @@ const initialState: VerifierState = {
 
 const Verifier: React.FC = () => {
     const [state, dispatch] = useReducer(verifierReducer, initialState);
+    const [error, setError] = useState(new Set());
+    const [loadingAddress, setLoadingAddress] = useState(false);
     const globalDispatch = useDispatchContext();
+    // const [isError, setIsError] = useState(false);
+    const [isValidationError, setIsValidationError] = useState(false);
+
+    useEffect(() => {
+        console.log('fire');
+
+        error.clear();
+        setError(error);
+        setLoadingAddress(false);
+
+        // check if input is empty
+        if (state.address.length > 0) {
+            const addresses = state.address.split(',');
+            // console.log(addresses)
+
+            // check if inputted addresses are valid
+            addresses.forEach(address => {
+                if (!Web3.isAddress(address)) {
+                    // console.log('Here - address is valid')
+                    // console.log(address)
+                    error.add(address);
+                    setError(error);
+                }
+                // else {
+                //     console.log('Here - address is not valid')
+                //     console.log(address)
+                //     error.add(address);
+                //     setError(error);
+                // }
+            });
+
+            if (error.size >= 1) {
+                console.log('There is error');
+                setIsValidationError(true)
+                return;
+            }
+
+            console.log('Here');
+            setIsValidationError(false);
+            setLoadingAddress(true);
+
+            console.log('Fire api call');
+            checkddresses(addresses.join(','), getChainIds()).then(data => {
+                // console.table(data);
+                if (data.unsuccessful.length > 0) {
+                    console.table(data.unsuccessful);
+                    globalDispatch({
+                        type: "SHOW_NOTIFICATION",
+                        payload: {type: "error", content: data.unsuccessful.join(',')}
+                    });
+                } else {
+                    globalDispatch({
+                        type: "SHOW_NOTIFICATION",
+                        payload: {type: "success", content: 'Addresses successfully verified!'}
+                    });
+                }
+
+                setLoadingAddress(false);
+            });
+            console.table(addresses);
+        }
+    }, [state.address])
 
     const handleAddressChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         dispatch(
@@ -109,7 +175,16 @@ const Verifier: React.FC = () => {
             <div className="form-container__middle">
                 <form className="form" onSubmit={onSubmit}>
                     <Dropdown items={chainOptions} initialValue={chainOptions[0]} onSelect={handleOnSelect}/>
-                    <AddressInput onChange={handleAddressChange}/>
+                    <div>
+                        <AddressInput onChange={handleAddressChange}/>
+                        {loadingAddress && <span>Verifying</span>}
+                    </div>
+                    {isValidationError && error.size === 1 &&
+                        <span className="validation validation--error">Address is not valid</span>
+                    }
+                    {isValidationError && error.size > 1 &&
+                    <span className="validation validation--error">Some of the addresses are not valid</span>
+                    }
                     {
                         state.files.length > 0 && <div className="form__file-upload-header">
                             <span>FILES ({state.files.length})</span>
@@ -117,7 +192,8 @@ const Verifier: React.FC = () => {
                         </div>
                     }
                     <FileUpload handleFiles={handleFiles} files={state.files}/>
-                    <button type="submit" className={`form__submit-btn ${!state.address ? `form__submit-btn--disabled` : ""}`}
+                    <button type="submit"
+                            className={`form__submit-btn ${!state.address ? `form__submit-btn--disabled` : ""}`}
                             disabled={!state.address}>VERIFY
                     </button>
                 </form>
