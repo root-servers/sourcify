@@ -10,7 +10,7 @@ import {FileUpload, AddressInput} from "./form";
 import Dropdown from "../Dropdown";
 import LoadingOverlay from "../LoadingOverlay";
 import {useDispatchContext} from "../../state/State";
-import {checkddresses, verify} from "../../api/verifier";
+import {checkAddresses, verify} from "../../api/verifier";
 import Web3 from "web3-utils";
 import {getChainIds} from "../../utils";
 
@@ -26,12 +26,11 @@ const Verifier: React.FC = () => {
     const [error, setError] = useState(new Set());
     const [loadingAddress, setLoadingAddress] = useState(false);
     const globalDispatch = useDispatchContext();
-    // const [isError, setIsError] = useState(false);
     const [isValidationError, setIsValidationError] = useState(false);
 
     useEffect(() => {
-        console.log('fire');
 
+        // reset values
         error.clear();
         setError(error);
         setLoadingAddress(false);
@@ -39,39 +38,29 @@ const Verifier: React.FC = () => {
         // check if input is empty
         if (state.address.length > 0) {
             const addresses = state.address.split(',');
-            // console.log(addresses)
 
             // check if inputted addresses are valid
             addresses.forEach(address => {
                 if (!Web3.isAddress(address)) {
-                    // console.log('Here - address is valid')
-                    // console.log(address)
                     error.add(address);
                     setError(error);
                 }
-                // else {
-                //     console.log('Here - address is not valid')
-                //     console.log(address)
-                //     error.add(address);
-                //     setError(error);
-                // }
             });
 
+            // check if there is any address that doesn't pass validation
             if (error.size >= 1) {
                 console.log('There is error');
                 setIsValidationError(true)
                 return;
             }
 
-            console.log('Here');
             setIsValidationError(false);
             setLoadingAddress(true);
 
             console.log('Fire api call');
-            checkddresses(addresses.join(','), getChainIds()).then(data => {
-                // console.table(data);
+            checkAddresses(addresses.join(','), getChainIds()).then(data => {
+                // if there are addresses that doesn't exist in repo
                 if (data.unsuccessful.length > 0) {
-                    console.table(data.unsuccessful);
                     globalDispatch({
                         type: "SHOW_NOTIFICATION",
                         payload: {type: "error", content: data.unsuccessful.join(',')}
@@ -82,10 +71,8 @@ const Verifier: React.FC = () => {
                         payload: {type: "success", content: 'Addresses successfully verified!'}
                     });
                 }
-
                 setLoadingAddress(false);
             });
-            console.table(addresses);
         }
     }, [state.address])
 
