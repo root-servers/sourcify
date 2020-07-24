@@ -40,3 +40,34 @@ export const verify = async (formData: any): Promise<VerificationResult> => {
     }
     return data;
 }
+
+type CheckAddressesResult = {
+    successful: string[],
+    unsuccessful: string[]
+}
+
+type CheckAddressesBody = [
+    {
+        address: string,
+        status: string
+    }
+]
+
+export const checkddresses = async (addresses: string, chainIds: string): Promise<CheckAddressesResult> => {
+    const data: CheckAddressesResult = {
+        successful: [],
+        unsuccessful: []
+    }
+
+    try {
+        const response = await fetch(`http://localhost:2000/checkByAddresses?addresses=${addresses}&chainIds=${chainIds}`)
+        const body: CheckAddressesBody = await response.json();
+
+        data.successful = body.filter(value => value.status === 'perfect').map(e => e.address);
+        data.unsuccessful = body.filter(value => value.status === 'false').map(e => e.address);
+
+        return data;
+    } catch (e) {
+        console.log(e.messages)
+    }
+}
