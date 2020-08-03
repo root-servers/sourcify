@@ -41,7 +41,13 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": ""
+							"raw": "{{host}}/health",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"health"
+							]
 						},
 						"description": "Check server health status"
 					},
@@ -53,7 +59,25 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": ""
+							"raw": "{{host}}/tree/:chain/:address",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"tree",
+								":chain",
+								":address"
+							],
+							"variable": [
+								{
+									"key": "chain",
+									"value": "5"
+								},
+								{
+									"key": "address",
+									"value": "0x0000A906D248Cc99FB8CB296C8Ad8C6Df05431c9"
+								}
+							]
 						}
 					},
 					"response": []
@@ -64,7 +88,25 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": ""
+							"raw": "{{host}}/files/:chain/:address",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"files",
+								":chain",
+								":address"
+							],
+							"variable": [
+								{
+									"key": "chain",
+									"value": "5"
+								},
+								{
+									"key": "address",
+									"value": "0x0000A906D248Cc99FB8CB296C8Ad8C6Df05431c9"
+								}
+							]
 						}
 					},
 					"response": []
