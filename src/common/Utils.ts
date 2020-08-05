@@ -5,32 +5,11 @@ import {NextFunction, Request, Response} from "express";
 import util from 'util';
 import fs from 'fs';
 import path from 'path';
-import dirTree from 'directory-tree';
-import * as chainOptions from './chains.json';
+import * as chainOptions from '../chains.json';
+import config from '../config';
+import { FileObject, Match, RecompilationResult, InputData, StringMap, ReformattedMetadata} from './types';
 
 const solc: any = require('solc');
-export let repository = process.env.MOCK_REPOSITORY || './repository';
-
-declare interface StringMap {
-  [key: string]: string;
-}
-
-declare interface ReformattedMetadata {
-  input: any,
-  fileName: string,
-  contractName: string
-}
-
-export interface RecompilationResult {
-  bytecode: string,
-  deployedBytecode: string,
-  metadata: string
-}
-
-export interface Match {
-  address: string | null,
-  status: 'perfect' | 'partial' | null
-}
 
 /**
  * Extracts cbor encoded segement from bytecode
@@ -171,14 +150,6 @@ export async function recompile(
   }
 }
 
-export type InputData = {
-  repository: string
-  chain: string,
-  addresses: string[],
-  files: string[],
-  bytecode?: string
-}
-
 export function findInputFiles(req: Request, log: Logger): any {
   const inputs: any = [];
 
@@ -260,41 +231,6 @@ export function findByAddress(address: string, chain: string, repository: string
   }]
 }
 
-export type FileObject = {
-  name: string,
-  path: string
-  content?: string
-}
-
-export function fetchAllFileUrls(chain: string, address: string): Array<string> {
-  const files: Array<FileObject> = fetchAllFilePaths(chain, address);
-  const urls: Array<string> = [];
-  files.forEach((file) => {
-    const relativePath = file.path.split('/repository')[1].substr(1);
-    urls.push(`${process.env.REPOSITORY_URL}${relativePath}`);
-  });
-  return urls;
-}
-
-export function fetchAllFilePaths(chain: string, address: string): Array<FileObject>{
-  const fullPath: string = path.resolve(__dirname, `../repository/contract/${chain}/${address}/`);
-  const files: Array<FileObject> = [];
-  dirTree(fullPath, {}, (item) => {
-    files.push({"name": item.name, "path": item.path});
-  });
-  return files;
-}
-
-export function fetchAllFileContents(chain: string, address: string): Array<FileObject>{
-  const files = fetchAllFilePaths(chain, address);
-    for(const file in files){
-      const loadedFile = fs.readFileSync(files[file].path)
-      files[file].content = loadedFile.toString();
-    }
-
-    return files;
-}
-
 export function getChainId(chain: string): string {
   for(const chainOption in chainOptions){
       const network = chainOptions[chainOption].network;
@@ -342,9 +278,9 @@ type Tag = {
  */
 export function updateRepositoryTag(repositoryPath?: string) {
   if(repositoryPath !== undefined) {
-    repository = repositoryPath;
+    config.repository.path = repositoryPath;
   }
-  const filePath: string = path.join(repository, 'manifest.json')
+  const filePath: string = path.join(config.repository.path, 'manifest.json')
   const timestamp = new Date().getTime();
   const repositoryVersion = process.env.REPOSITORY_VERSION || '0.1';
   const tag: Tag = {

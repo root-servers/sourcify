@@ -21,7 +21,7 @@ import {
   Match,
   getChainByName,
   save
-} from './utils';
+} from '../../common/Utils';
 
 declare interface StringMap {
   [key: string]: string;
