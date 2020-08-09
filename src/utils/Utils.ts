@@ -2,12 +2,10 @@ import cbor from 'cbor';
 import Web3 from 'web3';
 import Logger from 'bunyan';
 import {NextFunction, Request, Response} from "express";
-import util from 'util';
 import fs from 'fs';
 import path from 'path';
-import * as chainOptions from '../chains.json';
 import config from '../config';
-import { FileObject, Match, RecompilationResult, InputData, StringMap, ReformattedMetadata} from './types';
+import { FileObject, Match, RecompilationResult, InputData, StringMap, ReformattedMetadata} from '../common/types';
 
 const solc: any = require('solc');
 
@@ -148,110 +146,6 @@ export async function recompile(
     deployedBytecode: `0x${contract.evm.deployedBytecode.object}`,
     metadata: contract.metadata.trim()
   }
-}
-
-export function findInputFiles(req: Request, log: Logger): any {
-  const inputs: any = [];
-
-  if (req.files && req.files.files) {
-
-    // Case: <UploadedFile[]>
-    if (Array.isArray(req.files.files)) {
-      req.files.files.forEach(file => {
-        inputs.push(file.data)
-      })
-      return inputs;
-
-      // Case: <UploadedFile>
-    } else if (req.files.files["data"]) {
-      inputs.push(req.files.files["data"]);
-      return inputs;
-    }
-
-    // Case: default
-    const msg = `Invalid file(s) detected: ${util.inspect(req.files.files)}`;
-    log.info({loc: '[POST:INVALID_FILE]'}, msg);
-    throw new BadRequest(msg);
-  }
-
-  // If we reach this point, an address has been submitted and searched for
-  // but there are no files associated with the request.
-  const msg = 'Address for specified chain not found in repository';
-  log.info({loc: '[POST:ADDRESS_NOT_FOUND]', err: msg})
-  throw new NotFound(msg);
-}
-
-export function sanitizeInputFiles(inputs: any, log: Logger): string[] {
-  const files = [];
-  if (!inputs.length) {
-    const msg = 'Unable to extract any files. Your request may be misformatted ' +
-                'or missing some contents.';
-
-    const err = new Error(msg);
-    log.info({loc: '[POST:NO_FILES]', err: err})
-    throw new BadRequest(msg)
-  }
-
-  for (const data of inputs) {
-    try {
-      const val = JSON.parse(data.toString());
-      const type = Object.prototype.toString.call(val);
-
-      (type === '[object Object]')
-        ? files.push(JSON.stringify(val))  // JSON formatted metadata
-        : files.push(val);                 // Stringified metadata
-
-    } catch (err) {
-      files.push(data.toString())          // Solidity files
-    }
-
-  }
-  return files;
-}
-
-/**
- * Only for checking that files exists in path
- * @param address
- * @param chain
- * @param repository
- */
-export function findByAddress(address: string, chain: string, repository: string): Match[] {
-  const addressPath = `${repository}/contracts/full_match/${chain}/${address}/metadata.json`;
-  const normalizedPath = path.join(__dirname, '..', addressPath);
-
-  try {
-    fs.readFileSync(normalizedPath);
-  } catch(e){
-    throw new Error("Address not found in repository");
-  }
-
-  return [{
-    address: address,
-    status: "perfect"
-  }]
-}
-
-export function getChainId(chain: string): string {
-  for(const chainOption in chainOptions){
-      const network = chainOptions[chainOption].network;
-      const chainId = chainOptions[chainOption].chainId;
-      if( (network && network.toLowerCase() === chain) || String(chainId) === chain){
-        return String(chainOptions[chainOption].chainId);
-      }
-    }
-
-  throw new NotFound(`Chain ${chain} not supported!`);
-}
-
-export function getChainByName(name: string): any {
-  for(const chainOption in chainOptions) {
-    const network = chainOptions[chainOption].network;
-    if(network && network.toLowerCase() === name){
-      return chainOptions[chainOption];
-    }
-  }
-
-  throw new NotFound(`Chain ${name} not supported!`)
 }
 
 import { outputFileSync } from 'fs-extra';

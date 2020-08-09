@@ -1,4 +1,4 @@
-import { getChainId } from '../Utils'
+import { getChainId } from '../../utils/Utils'
 
 const web3 = require('web3');
 export function isValidAddress(address: string) {

@@ -21,7 +21,7 @@ import {
   Match,
   getChainByName,
   save
-} from '../../common/Utils';
+} from '../../utils/Utils';
 
 declare interface StringMap {
   [key: string]: string;
@@ -166,16 +166,6 @@ export default class Injector {
     }
     return sources
   }
-
-  private getIdFromChainName(chain: string): number {
-    for(const chainOption in chainOptions) {
-      if(chainOptions[chainOption].network === chain){
-        return chainOptions[chainOption].chainId;
-      }
-    }
-    throw new NotFound("Chain not found!"); //TODO: should we throw an error here or just let it pass?
-  }
-
 
   /**
    * Writes verified sources to repository by address and by ipfs | swarm hash

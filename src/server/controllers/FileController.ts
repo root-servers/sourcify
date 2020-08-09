@@ -6,15 +6,22 @@ import * as HttpStatus from 'http-status-codes';
 import { NotFoundError, ValidationError } from '../../common/errors';
 import { query, validationResult } from 'express-validator/check';
 import { isValidAddress, isValidChain } from '../../common/validators/validators';
+import * as bunyan from 'bunyan';
+import { Logger } from '../../utils/logger/Logger';
 
 export default class FileController extends BaseController implements IController {
     router: Router;
     fileService: IFileService;
+    logger: bunyan;
 
-    constructor(fileService: IFileService) {
+    constructor(fileService: IFileService, logger?: bunyan) {
         super();
         this.router = Router();
-        this.fileService = fileService;        
+        this.fileService = fileService;
+        this.logger = Logger("FileController");
+        if(logger !== undefined){
+            this.logger = logger;
+        }
     }
 
     getTreeByChainAndAddress = async (req: Request, res: Response, next: NextFunction) => {
